@@ -1,2 +1,352 @@
-# Fazzuu
-For her 
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>For Kulsum — Say Yes pls</title>
+
+  <!-- Optional font (uses Google Fonts) -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --pink:#ff4d6d;
+      --soft-pink:#ffccd5;
+      --card-bg:#fff;
+      --muted:#666;
+      --muted-2:#444;
+      --glass: rgba(255,255,255,0.80);
+      --accent: #ffd166;
+      --ease-spring: cubic-bezier(.16,1,.3,1);
+      --max-width:760px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      padding:0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: var(--soft-pink);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      overflow:hidden;
+      color: #222;
+    }
+
+    .bg { position:fixed; inset:0; pointer-events:none; z-index:0; }
+    .bg__base{ position:absolute; inset:0; background: linear-gradient(180deg, var(--soft-pink) 0%, #ffeef1 100%); transition: opacity .6s ease; opacity:1; }
+    .bg__poem{ position:absolute; inset:0; background: linear-gradient(120deg, #ff9aa2 0%, #ffccd5 30%, #ffd166 70%, #9be7ff 100%); background-size: 200% 200%; opacity:0; transform: scale(1.02); transition: opacity .8s ease, transform .9s var(--ease-spring); animation: moveGradient 12s linear infinite; }
+    @keyframes moveGradient { 0%{ background-position: 0% 50%; } 50%{ background-position: 100% 50%; } 100%{ background-position: 0% 50%; } }
+    body.poem-open .bg__poem{ opacity:1; transform: scale(1); } body.poem-open .bg__base{ opacity:0.12; }
+
+    .card{
+      position:relative;
+      z-index:10;
+      background: var(--card-bg);
+      border-radius:20px;
+      padding:30px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.12);
+      width: calc(100% - 48px);
+      max-width: var(--max-width);
+      transition: transform .45s var(--ease-spring), box-shadow .3s ease, opacity .3s ease;
+      transform-origin:center;
+    }
+    .card:focus{ outline: 3px solid rgba(255,77,109,.14) }
+
+    #initial-box{ cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:8px; font-family: "Playfair Display", serif; }
+    #initial-box h1{ font-size:62px; margin:0; }
+    #initial-box p{ margin:0; font-size:1.15rem; color:var(--muted-2); }
+    #initial-box small{ color:#666 }
+
+    #question-screen{ display:none; }
+    .plea { margin-top:8px; font-weight:700; color:var(--pink); font-family: "Playfair Display", serif; font-size:1.02rem; }
+
+    .btn-container{ margin-top:22px; position:relative; height:140px; display:flex; align-items:center; justify-content:center; gap:18px; }
+
+    button{
+      padding:12px 34px;
+      border-radius:40px;
+      border:none;
+      cursor:pointer;
+      font-size:1.05rem;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+      transition: transform .18s ease, box-shadow .18s ease;
+      background: #eee;
+      color: #222;
+      font-weight:600;
+    }
+    button:active{ transform: translateY(1px) }
+    button:focus{ outline: 3px solid rgba(0,0,0,.06) }
+
+    #yes-btn{ background: linear-gradient(90deg,var(--pink), #ff8aa0); color: #fff; box-shadow: 0 14px 30px rgba(255,77,109,0.14); transform-origin:center; animation: yesPulse 2.6s ease-in-out infinite; }
+    @keyframes yesPulse{ 0%{ transform: scale(1); } 50%{ transform: scale(1.03); } 100%{ transform: scale(1); } }
+
+    #no-wrapper{ position:absolute; width:180px; height:56px; display:flex; align-items:center; justify-content:center; pointer-events:auto; z-index:12; transition: opacity .18s linear; }
+    #no-wrapper.teleporting{ opacity:0.04; transform: scale(.98); transition: none; }
+    #no-btn{ background:var(--muted); color:#fff; border-radius:40px; padding:10px 28px; cursor:default; user-select:none; }
+    .try-msg{ position:absolute; top:-46px; left:50%; transform:translateX(-50%); background: rgba(255,255,255,0.98); color:#222; padding:8px 12px; border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,0.10); font-weight:700; font-size:0.95rem; opacity:0; transition: opacity .24s ease, transform .24s ease; pointer-events:none; z-index:20; white-space:nowrap; }
+    .try-msg.show{ opacity:1; transform:translateX(-50%) translateY(-6px); }
+
+    /* poem card */
+    #poem-screen{ display:none; padding:36px; border-radius:20px; background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.72)); backdrop-filter: blur(6px); box-shadow: 0 24px 70px rgba(0,0,0,0.16); max-height: calc(100vh - 88px); overflow:auto; -webkit-overflow-scrolling: touch; }
+    #poem-screen h2{ margin-top:0; font-family:"Playfair Display", serif; color:var(--pink); letter-spacing:0.6px; }
+
+    .poem-text{ font-family: "Playfair Display", Georgia, serif; font-size:1.03rem; color: #2e2e2e; line-height:1.75; letter-spacing:0.2px; margin-top:12px; padding-right:6px; padding-bottom:8px; }
+    .poem-line{ opacity:0; transform:translateY(8px); display:block; transition: opacity .48s ease, transform .48s cubic-bezier(.16,1,.3,1); margin:6px 0; }
+
+    /* drop-cap */
+    .poem-line:first-child::first-letter{ float:left; font-size:66px; line-height:0.7; margin-right:10px; color:var(--pink); font-weight:900; font-family: "Playfair Display", serif; }
+
+    .poem-final{ display:block; font-weight:800; margin-top:14px; font-size:1.07rem; color: var(--muted-2); background: linear-gradient(90deg, rgba(255,77,109,0.06), rgba(253, 230, 180, 0.04)); padding:12px 14px; border-radius:10px; }
+
+    .fade-in-up{ opacity:0; transform: translateY(10px); transition: opacity .5s ease, transform .5s var(--ease-spring); }
+    .visible{ opacity:1; transform: translateY(0); }
+
+    /* ===== MOBILE ADJUSTMENTS ===== */
+    @media (max-width:700px) {
+      .card{ padding:18px; border-radius:14px; width: calc(100% - 28px); }
+      #initial-box h1{ font-size:48px; }
+      .btn-container{ height:120px; gap:12px; }
+      #no-wrapper{ position:relative; margin-left:12px; left:auto; top:auto; transform:none; width:140px; height:48px; }
+      #no-btn{ padding:8px 22px; font-size:0.98rem; }
+      #yes-btn{ padding:10px 26px; font-size:1rem; animation:none; }
+
+      /* Poem card uses almost full height, scrolls nicely */
+      #poem-screen{ padding:18px; border-radius:12px; max-height: calc(100vh - 64px); overflow:auto; -webkit-overflow-scrolling: touch; }
+      .poem-text{ font-size:0.98rem; line-height:1.6; padding-right:4px; }
+      .poem-line:first-child::first-letter{ font-size:44px; margin-right:8px; line-height:0.85; }
+
+      .poem-final{ font-size:1rem; padding:10px 12px; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *{ transition:none !important; animation:none !important; }
+      .poem-line{ opacity:1 !important; transform:none !important; }
+      .bg__poem{ animation:none !important; opacity:1 !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="bg__base"></div>
+    <div class="bg__poem"></div>
+  </div>
+
+  <div id="initial-box" class="card" role="button" tabindex="0" aria-label="Open message for Kulsum">
+    <h1>🎁</h1>
+    <p>Kulsum, you have a message...</p>
+    <small>(Click or press Enter to open)</small>
+  </div>
+
+  <div id="question-screen" class="card fade-in-up" aria-hidden="true" role="region" aria-label="Question">
+    <h1 style="margin-top:0; font-family: 'Playfair Display', serif;">Kulsum, do you like me? ❤️</h1>
+    <div class="plea" id="plea-text">Please say YES pls — you can't really say NO 😇</div>
+
+    <div id="btn-container" class="btn-container" aria-hidden="false">
+      <button id="yes-btn" aria-label="Yes, I like you">YES</button>
+
+      <div id="no-wrapper" aria-hidden="false" style="left:62%; top:58%;">
+        <div class="try-msg" id="try-msg">Come on, say YES 🙏</div>
+        <button id="no-btn" aria-label="No" tabindex="-1">NO</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="poem-screen" class="card fade-in-up" aria-hidden="true" tabindex="0" role="region" aria-label="Poem">
+    <h2>OMG YESS! ❤️</h2>
+    <div id="poem" class="poem-text" aria-live="polite">
+I still remember you
+from back then—
+two ponytails,
+a smile that never needed a reason,
+the kind of happiness
+that stayed even after the bell rang.
+
+Years passed.
+Names changed classrooms,
+faces changed expressions,
+but when college brought you back,
+I knew—
+some things don’t grow old,
+they just grow quieter.
+
+You walked in
+with the same smile,
+as if time had practiced
+returning you
+exactly the way you were.
+And suddenly,
+third grade felt closer
+than yesterday.
+
+I see my future with u ..bright shiny full of love and abundance. I love you Kulsum.
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const initial = document.getElementById('initial-box');
+      const question = document.getElementById('question-screen');
+      const poemCard = document.getElementById('poem-screen');
+      const yesBtn = document.getElementById('yes-btn');
+      const noBtn = document.getElementById('no-btn');
+      const noWrapper = document.getElementById('no-wrapper');
+      const btnContainer = document.getElementById('btn-container');
+      const pleaText = document.getElementById('plea-text');
+      const tryMsg = document.getElementById('try-msg');
+      const poemEl = document.getElementById('poem');
+
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function showQuestion(){
+        initial.style.display = 'none';
+        question.style.display = 'block';
+        question.setAttribute('aria-hidden','false');
+        requestAnimationFrame(()=> question.classList.add('visible'));
+        question.classList.add('subtle-lift');
+        setTimeout(()=> yesBtn.focus(), 260);
+        positionNoWrapperInitial();
+        if(!prefersReducedMotion) setTimeout(startTeleportLoop, 450);
+      }
+
+      function showPoem(){
+        stopTeleportLoop();
+        document.body.classList.add('poem-open');
+        question.style.display = 'none';
+        question.setAttribute('aria-hidden','true');
+
+        poemCard.style.display = 'block';
+        poemCard.setAttribute('aria-hidden','false');
+        requestAnimationFrame(()=> poemCard.classList.add('visible'));
+        poemCard.classList.add('subtle-lift');
+
+        // format poem into lines and stagger reveal
+        const text = poemEl.textContent.trim();
+        const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+        poemEl.innerHTML = '';
+
+        lines.forEach((line, idx) => {
+          if(idx === lines.length - 1){
+            const last = document.createElement('div');
+            last.className = 'poem-final';
+            last.textContent = line;
+            poemEl.appendChild(last);
+            if(!prefersReducedMotion){
+              last.style.transitionDelay = (idx * 90) + 'ms';
+              setTimeout(()=> { last.style.opacity = '1'; last.style.transform = 'translateY(0)'; }, 40 + idx*90);
+            } else { last.style.opacity = 1; }
+            return;
+          }
+          const div = document.createElement('div');
+          div.className = 'poem-line';
+          div.textContent = line;
+          poemEl.appendChild(div);
+          if(!prefersReducedMotion){
+            div.style.transitionDelay = (idx * 80) + 'ms';
+            setTimeout(()=> { div.style.opacity='1'; div.style.transform='translateY(0)'; }, 40 + idx*80);
+          } else { div.style.opacity = 1; div.style.transform = 'none'; }
+        });
+
+        // ensure poem card scrolls to top on reveal
+        poemCard.scrollTop = 0;
+        setTimeout(()=> poemCard.focus(), 420 + lines.length * 50);
+      }
+
+      // teleport implementations (same as before)
+      function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+      function positionNoWrapperInitial(){
+        const qRect = question.getBoundingClientRect();
+        const w = noWrapper.offsetWidth;
+        const h = noWrapper.offsetHeight;
+        const left = Math.min(qRect.width - w - 12, (qRect.width * 0.62));
+        const top = Math.min(qRect.height - h - 12, (qRect.height * 0.56));
+        noWrapper.style.position = 'absolute';
+        noWrapper.style.left = left + 'px';
+        noWrapper.style.top = top + 'px';
+      }
+      function teleportNoInstant(){
+        const qRect = question.getBoundingClientRect();
+        const w = noWrapper.offsetWidth;
+        const h = noWrapper.offsetHeight;
+        const pad = 12;
+        const maxLeft = Math.max(0, qRect.width - w - pad*2);
+        const maxTop = Math.max(0, qRect.height - h - pad*2);
+        const randLeft = pad + Math.floor(Math.random() * (maxLeft + 1));
+        const randTop = pad + Math.floor(Math.random() * (maxTop + 1));
+        noWrapper.classList.add('teleporting');
+        noWrapper.style.left = randLeft + 'px';
+        noWrapper.style.top = randTop + 'px';
+        setTimeout(()=> noWrapper.classList.remove('teleporting'), 120);
+      }
+      function teleportNoGlide(){
+        const qRect = question.getBoundingClientRect();
+        const w = noWrapper.offsetWidth;
+        const h = noWrapper.offsetHeight;
+        const pad = 10;
+        const maxLeft = Math.max(0, qRect.width - w - pad*2);
+        const maxTop = Math.max(0, qRect.height - h - pad*2);
+        const randLeft = pad + Math.floor(Math.random() * (maxLeft + 1));
+        const randTop = pad + Math.floor(Math.random() * (maxTop + 1));
+        noWrapper.style.transition = 'left 260ms ease, top 260ms ease, opacity 120ms linear';
+        noWrapper.style.left = randLeft + 'px';
+        noWrapper.style.top = randTop + 'px';
+        setTimeout(()=> noWrapper.style.transition = '', 300);
+      }
+      function attemptTeleportNearPointer(e){
+        if(prefersReducedMotion) return;
+        const p = (e.touches && e.touches[0]) ? e.touches[0] : e;
+        const rect = noWrapper.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = p.clientX - cx;
+        const dy = p.clientY - cy;
+        const dist = Math.hypot(dx, dy);
+        const threshold = 140;
+        if(dist < threshold){
+          if(Math.random() < 0.5) teleportNoInstant(); else teleportNoGlide();
+          showTryMsg();
+          pleaText.style.transform = 'translateY(-5px) scale(1.02)';
+          setTimeout(()=> pleaText.style.transform = '', 360);
+        }
+      }
+      function onNoClick(e){ e.preventDefault(); e.stopPropagation(); teleportNoInstant(); showTryMsg(); noWrapper.style.transform = 'scale(1.03)'; setTimeout(()=> noWrapper.style.transform = '', 220); }
+      let tryTimeout = null;
+      function showTryMsg(){ tryMsg.classList.add('show'); if(tryTimeout) clearTimeout(tryTimeout); tryTimeout = setTimeout(()=> tryMsg.classList.remove('show'), 1000); }
+      let teleportIntervalId = null;
+      function startTeleportLoop(){ if(prefersReducedMotion) return; if(teleportIntervalId) return; teleportIntervalId = setInterval(()=> { if(Math.random() < 0.6) teleportNoGlide(); else teleportNoInstant(); }, 2200 + Math.random()*2000); }
+      function stopTeleportLoop(){ if(teleportIntervalId) { clearInterval(teleportIntervalId); teleportIntervalId = null; } }
+
+      // events
+      initial.addEventListener('click', showQuestion);
+      initial.addEventListener('keydown', (e)=> { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showQuestion(); } });
+      yesBtn.addEventListener('click', showPoem);
+
+      noWrapper.addEventListener('mouseenter', attemptTeleportNearPointer);
+      noWrapper.addEventListener('mousemove', attemptTeleportNearPointer);
+      noWrapper.addEventListener('touchstart', (e)=> { e.preventDefault(); teleportNoInstant(); showTryMsg(); }, { passive:false });
+      noWrapper.addEventListener('click', onNoClick);
+
+      noBtn.setAttribute('tabindex', '-1');
+
+      poemCard.addEventListener('keydown', (e)=> {
+        if(e.key === 'Escape'){
+          poemCard.style.display = 'none';
+          poemCard.setAttribute('aria-hidden','true');
+          initial.style.display = 'block';
+          initial.focus();
+          document.body.classList.remove('poem-open');
+        }
+      });
+
+      window.addEventListener('resize', ()=> { if(question.style.display !== 'none') positionNoWrapperInitial(); });
+
+      // hide visible class on load
+      setTimeout(()=> { question.classList.remove('visible'); poemCard.classList.remove('visible'); }, 40);
+
+    })();
+  </script>
+</body>
+</html>
